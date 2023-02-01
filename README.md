@@ -4,8 +4,8 @@ Colliding blocks simulation in C.
 
 ## Quick Start
 ```console
-./build.sh
-./build/colliding_blocks
+$ ./build.sh
+$ ./build/colliding_blocks
 ```
 
 ## References
