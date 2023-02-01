@@ -11,11 +11,13 @@
 #define FPS 60
 #define SCALE_FACTOR 400
 
-// Higher the time steps, higher the simulation accuracy. See: https://en.wikipedia.org/wiki/Euler_method
+// Higher the time steps, higher the simulation accuracy.
 #define TIME_STEPS 10
 
 #define L_MASS 1
 #define R_MASS 1000000  // Must be a power of 100 in order to the collisions number be ~ pi
+
+#define CLACK_SOUND "clack.wav"
 
 #define HEX(c)                 \
   ((c >> (8 * 3)) & 0xFF),     \
@@ -29,7 +31,17 @@ typedef struct {
   SDL_FRect rect;
 } Block;
 
+static Uint8 *wav_buf;
+static Uint32 wav_len;
+static SDL_AudioDeviceID device_id;
+
 static unsigned int collisions = 0;
+
+void play_clack() {
+  if (SDL_GetQueuedAudioSize(device_id) == 0)
+    SDL_QueueAudio(device_id, wav_buf, wav_len);
+  SDL_PauseAudioDevice(device_id, 0);
+}
 
 void update(float dt, Block *block_l, Block *block_r) {
   block_l->rect.x += block_l->dx * dt;
@@ -41,6 +53,7 @@ void update(float dt, Block *block_l, Block *block_r) {
     block_l->dx = (block_l->mass - block_r->mass) / (block_l->mass + block_r->mass) * old_l_dx + (2 * block_r->mass * old_r_dx) / (block_l->mass + block_r->mass);
     block_r->dx = (block_r->mass - block_l->mass) / (block_l->mass + block_r->mass) * old_r_dx + (2 * block_l->mass * old_l_dx) / (block_l->mass + block_r->mass);
     collisions++;
+    play_clack();
     printf("INFO: Block intersection detected. New left speed: %.2f. New right speed: %.2f\n", block_l->dx, block_r->dx);
     printf("INFO: Current collisions number: %u\n", collisions);
   }
@@ -48,6 +61,7 @@ void update(float dt, Block *block_l, Block *block_r) {
   if (block_l->rect.x <= 30) {
     block_l->dx *= -1;
     collisions++;
+    play_clack();
     printf("INFO: Wall intersection detected. New left speed: %.2f. \n", block_l->dx);
     printf("INFO: Current collisions number: %u\n", collisions);
   }
@@ -81,7 +95,7 @@ void render(SDL_Renderer *renderer, Block *block_l, Block *block_r) {
 
 int main(void) {
   static_assert(L_MASS <= R_MASS, "Left block mass must be less or equal than right block mass.");
-  int sdl = SDL_Init(SDL_INIT_VIDEO);
+  int sdl = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
   if (sdl != 0) {
     fprintf(stderr, "ERROR: SDL init failed: %s\n", SDL_GetError());
@@ -101,6 +115,15 @@ int main(void) {
     fprintf(stderr, "ERROR: Failed to create the renderer: %s\n", SDL_GetError());
     exit(1);
   }
+
+  SDL_AudioSpec wav_spec;
+
+  if (SDL_LoadWAV(CLACK_SOUND, &wav_spec, &wav_buf, &wav_len) == NULL) {
+    fprintf(stderr, "ERROR: Failed to load clack.wav: %s\n", SDL_GetError());
+    exit(1);
+  }
+
+  device_id = SDL_OpenAudioDevice(NULL, 0, &wav_spec, NULL, 0);
 
   bool quit = false;
   int block_l_sz = fmin(200, sqrt(L_MASS * SCALE_FACTOR) + 25);
@@ -147,6 +170,8 @@ int main(void) {
     usleep(1000 * 1000 / FPS);
   }
 
+  SDL_CloseAudioDevice(device_id);
+  SDL_FreeWAV(wav_buf);
   SDL_Quit();
 
   return 0;

@@ -12,4 +12,3 @@ $ ./build/colliding_blocks
 
 - [Linear Momentum](https://en.wikipedia.org/wiki/Momentum)
 - [3blue1brown's explanation](https://www.3blue1brown.com/lessons/clacks-solution)
-- [Euler Integration](https://en.wikipedia.org/wiki/Euler_method)
