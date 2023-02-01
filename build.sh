@@ -4,7 +4,7 @@ set -xe
 
 CFLAGS="-Wall -Wextra"
 INCLUDES=`pkg-config --cflags sdl2`
-LIBS=`pkg-config --libs sdl2`
+LIBS="`pkg-config --libs sdl2` -lm"
 
 if [ ! -d build ]; then
     mkdir build
