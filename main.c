@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
@@ -12,12 +13,14 @@
 #define SCALE_FACTOR 400
 
 // Higher the time steps, higher the simulation accuracy.
-#define TIME_STEPS 10
+#define TIME_STEPS 1000
 
+#define PI_DIGITS 10
 #define L_MASS 1
-#define R_MASS 1000000  // Must be a power of 100 in order to the collisions number be ~ pi
+#define R_MASS (powf(100, PI_DIGITS))
 
 #define CLACK_SOUND "clack.wav"
+#define FONT_PATH "font.ttf"
 
 #define HEX(c)                 \
   ((c >> (8 * 3)) & 0xFF),     \
@@ -36,6 +39,8 @@ static Uint32 wav_len;
 static SDL_AudioDeviceID device_id;
 
 static unsigned int collisions = 0;
+
+static char text[128];
 
 void play_clack() {
   if (SDL_GetQueuedAudioSize(device_id) == 0)
@@ -67,7 +72,7 @@ void update(float dt, Block *block_l, Block *block_r) {
   }
 }
 
-void render(SDL_Renderer *renderer, Block *block_l, Block *block_r) {
+void render(SDL_Renderer *renderer, Block *block_l, Block *block_r, TTF_Font *font) {
   SDL_SetRenderDrawColor(renderer, HEX(0x181818FF));
   SDL_RenderClear(renderer);
 
@@ -88,13 +93,34 @@ void render(SDL_Renderer *renderer, Block *block_l, Block *block_r) {
   SDL_RenderFillRectF(renderer, &block_l->rect);
   SDL_RenderFillRectF(renderer, &block_r->rect);
 
+  sprintf(text, "Collisions: %u", collisions);
+
+  SDL_Color white = {255, 255, 255, 255};
+  SDL_Surface *surface = TTF_RenderText_Blended(font, text, white);
+  SDL_Texture *message = SDL_CreateTextureFromSurface(renderer, surface);
+
+  int text_w, text_h;
+  SDL_QueryTexture(message, NULL, NULL, &text_w, &text_h);
+
+  SDL_Rect msg_rect = {
+      .x = WIDTH - text_w - 30,
+      .y = 30,
+      .w = text_w,
+      .h = text_h,
+  };
+
+  SDL_RenderCopy(renderer, message, NULL, &msg_rect);
+
   SDL_RenderPresent(renderer);
   block_l->rect.x = old_l_x;
   block_r->rect.x = old_r_x;
+
+  SDL_FreeSurface(surface);
+  SDL_DestroyTexture(message);
 }
 
 int main(void) {
-  static_assert(L_MASS <= R_MASS, "Left block mass must be less or equal than right block mass.");
+  assert(L_MASS <= R_MASS && "Left block mass must be less or equal than right block mass.");
   int sdl = SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 
   if (sdl != 0) {
@@ -124,6 +150,14 @@ int main(void) {
   }
 
   device_id = SDL_OpenAudioDevice(NULL, 0, &wav_spec, NULL, 0);
+
+  TTF_Init();
+  TTF_Font *font = TTF_OpenFont(FONT_PATH, 24);
+
+  if (font == NULL) {
+    fprintf(stderr, "ERROR: Failed to load font: %s\n", SDL_GetError());
+    exit(1);
+  }
 
   bool quit = false;
   int block_l_sz = fmin(200, sqrt(L_MASS * SCALE_FACTOR) + 25);
@@ -165,13 +199,15 @@ int main(void) {
     for (int i = 0; i < TIME_STEPS; ++i) {
       update(1, &block_l, &block_r);
     }
-    render(renderer, &block_l, &block_r);
+    render(renderer, &block_l, &block_r, font);
 
     usleep(1000 * 1000 / FPS);
   }
 
   SDL_CloseAudioDevice(device_id);
   SDL_FreeWAV(wav_buf);
+  TTF_CloseFont(font);
+  TTF_Quit();
   SDL_Quit();
 
   return 0;

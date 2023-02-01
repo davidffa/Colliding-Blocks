@@ -3,8 +3,8 @@
 set -xe
 
 CFLAGS="-Wall -Wextra -O3"
-INCLUDES=`pkg-config --cflags sdl2`
-LIBS="`pkg-config --libs sdl2` -lm"
+INCLUDES="`pkg-config --cflags sdl2` `pkg-config --cflags sdl2_ttf`"
+LIBS="`pkg-config --libs sdl2` `pkg-config --libs sdl2_ttf` -lm"
 
 if [ ! -d build ]; then
     mkdir build
