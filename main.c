@@ -35,7 +35,7 @@ void update(float dt, Block *block_l, Block *block_r) {
   block_l->rect.x += block_l->dx * dt;
   block_r->rect.x += block_r->dx * dt;
 
-  if (SDL_HasIntersectionF(&block_l->rect, &block_r->rect)) {
+  if (block_l->rect.x + block_l->rect.w >= block_r->rect.x) {
     float old_l_dx = block_l->dx;
     float old_r_dx = block_r->dx;
     block_l->dx = (block_l->mass - block_r->mass) / (block_l->mass + block_r->mass) * old_l_dx + (2 * block_r->mass * old_r_dx) / (block_l->mass + block_r->mass);
