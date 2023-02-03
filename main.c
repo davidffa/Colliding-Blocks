@@ -15,12 +15,12 @@
 // Higher the time steps, higher the simulation accuracy.
 #define TIME_STEPS 1000
 
-#define PI_DIGITS 10
+#define PI_DIGITS 5
 #define L_MASS 1
 #define R_MASS (powf(100, PI_DIGITS))
 
-#define CLACK_SOUND "clack.wav"
-#define FONT_PATH "font.ttf"
+#define CLACK_SOUND "./assets/clack.wav"
+#define FONT_PATH "./assets/font.ttf"
 
 #define HEX(c)                 \
   ((c >> (8 * 3)) & 0xFF),     \
@@ -142,6 +142,14 @@ int main(void) {
     exit(1);
   }
 
+  TTF_Init();
+  TTF_Font *font = TTF_OpenFont(FONT_PATH, 24);
+
+  if (font == NULL) {
+    fprintf(stderr, "ERROR: Failed to load font: %s\n", SDL_GetError());
+    exit(1);
+  }
+
   SDL_AudioSpec wav_spec;
 
   if (SDL_LoadWAV(CLACK_SOUND, &wav_spec, &wav_buf, &wav_len) == NULL) {
@@ -151,17 +159,9 @@ int main(void) {
 
   device_id = SDL_OpenAudioDevice(NULL, 0, &wav_spec, NULL, 0);
 
-  TTF_Init();
-  TTF_Font *font = TTF_OpenFont(FONT_PATH, 24);
-
-  if (font == NULL) {
-    fprintf(stderr, "ERROR: Failed to load font: %s\n", SDL_GetError());
-    exit(1);
-  }
-
   bool quit = false;
   int block_l_sz = fmin(200, sqrt(L_MASS * SCALE_FACTOR) + 25);
-  int block_r_sz = fmin(400, sqrt(R_MASS * SCALE_FACTOR) + 25);
+  int block_r_sz = fmin(400, sqrt(R_MASS * SCALE_FACTOR / 2) + 25);
 
   Block block_l = {
       .dx = 0,
