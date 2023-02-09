@@ -59,7 +59,7 @@ void update(float dt, Block *block_l, Block *block_r) {
     block_r->dx = (block_r->mass - block_l->mass) / (block_l->mass + block_r->mass) * old_r_dx + (2 * block_l->mass * old_l_dx) / (block_l->mass + block_r->mass);
     collisions++;
     play_clack();
-    printf("INFO: Block intersection detected. New left speed: %.2f. New right speed: %.2f\n", block_l->dx, block_r->dx);
+    printf("INFO: Block intersection detected. New left speed: %.2f. New right speed: %.2f\n", block_l->dx * TIME_STEPS, block_r->dx * TIME_STEPS);
     printf("INFO: Current collisions number: %u\n", collisions);
   }
 
@@ -67,7 +67,7 @@ void update(float dt, Block *block_l, Block *block_r) {
     block_l->dx *= -1;
     collisions++;
     play_clack();
-    printf("INFO: Wall intersection detected. New left speed: %.2f. \n", block_l->dx);
+    printf("INFO: Wall intersection detected. New left speed: %.2f. \n", block_l->dx * TIME_STEPS);
     printf("INFO: Current collisions number: %u\n", collisions);
   }
 }
@@ -161,7 +161,7 @@ int main(void) {
 
   bool quit = false;
   int block_l_sz = fmin(200, sqrt(L_MASS * SCALE_FACTOR) + 25);
-  int block_r_sz = fmin(400, sqrt(R_MASS * SCALE_FACTOR / 2) + 25);
+  int block_r_sz = fmin(400, sqrt(R_MASS * SCALE_FACTOR) + 25);
 
   Block block_l = {
       .dx = 0,
